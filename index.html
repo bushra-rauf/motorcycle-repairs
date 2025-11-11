@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EU Motorcycle Repair Directory</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles/style.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <header>
+      <h1><i class="fas fa-motorcycle"></i> EU Motorcycle Repair Directory</h1>
+      <p>Find professional motorcycle repair shops across Europe</p>
+    </header>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="number" id="totalShops">0</div>
+        <div class="label">Total Shops</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="totalCountries">0</div>
+        <div class="label">Countries</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="totalCities">0</div>
+        <div class="label">Cities</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="avgRating">–</div>
+        <div class="label">Avg Rating</div>
+      </div>
+    </div>
+
+    <!-- STATUS MESSAGE -->
+    <div class="status-message" id="statusMessage"></div>
+
+    <!-- SEARCH BAR -->
+    <div class="search-container">
+      <input 
+        type="text" 
+        id="searchFilter" 
+        placeholder="🔍 Search shops by name, city, country, or business type..." 
+        class="search-input"
+      />
+    </div>
+
+    <!-- FILTERS - HORIZONTAL LAYOUT -->
+    <div class="filters-container">
+      <div class="filter-group">
+        <label for="countrySelect">
+          <i class="fas fa-globe"></i> Country
+        </label>
+        <select id="countrySelect" class="filter-select">
+          <option value="">Select a country...</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="citySelect">
+          <i class="fas fa-city"></i> City
+        </label>
+        <select id="citySelect" class="filter-select" disabled>
+          <option value="">Select a city...</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="businessTypeSelect">
+          <i class="fas fa-wrench"></i> Business Type
+        </label>
+        <select id="businessTypeSelect" class="filter-select">
+          <option value="">All Types</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT - NO MAP, FULL WIDTH SHOPS -->
+    <div class="results-container">
+      <!-- RESULTS LIST - FULL WIDTH -->
+      <div class="results-section">
+        <h2 class="results-header">
+          <span><i class="fas fa-list"></i> Available Shops</span>
+          <span class="result-count">
+            <span id="resultCount">0</span> results
+          </span>
+        </h2>
+        <div id="storesList" class="stores-list">
+          <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <p>Select filters to view available shops</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Supabase + App scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
