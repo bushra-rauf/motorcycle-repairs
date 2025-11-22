@@ -9,15 +9,42 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="styles/style.css" />
+  <link rel="stylesheet" href="styles/style.css?v=20241121002" />
 </head>
 <body>
   <div class="container">
-    <!-- HEADER -->
-    <header>
-      <h1><i class="fas fa-motorcycle"></i> EU Motorcycle Repair Directory</h1>
-      <p>Find professional motorcycle repair shops across Europe</p>
-    </header>
+    <!-- NAVIGATION BAR -->
+    <nav class="main-nav" id="mainNav">
+      <div class="nav-brand">
+        <i class="fas fa-motorcycle"></i> Motorcycle Services
+      </div>
+      <div class="nav-links">
+        <a href="#" class="nav-link active" data-view="shop-directory">
+          <i class="fas fa-store"></i> Shop Directory
+        </a>
+        <a href="#" class="nav-link" data-view="profile" id="profileNavLink" style="display: none;">
+          <i class="fas fa-user"></i> My Bikes
+        </a>
+        <a href="#" class="nav-link" data-view="login" id="loginNavLink">
+          <i class="fas fa-sign-in-alt"></i> Login / Sign Up
+        </a>
+        <a href="#" class="nav-link" id="logoutNavLink" style="display: none;">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </div>
+      <div class="user-info" id="userInfo" style="display: none;">
+        <i class="fas fa-user-circle"></i>
+        <span id="userEmail"></span>
+      </div>
+    </nav>
+
+    <!-- SHOP DIRECTORY VIEW -->
+    <div id="shopDirectoryView" class="view-container active">
+      <!-- HEADER -->
+      <header>
+        <h1><i class="fas fa-motorcycle"></i> EU Motorcycle Repair Directory</h1>
+        <p>Find professional motorcycle repair shops across Europe</p>
+      </header>
 
     <!-- STATS -->
     <div class="stats">
@@ -80,6 +107,13 @@
           <option value="">All Types</option>
         </select>
       </div>
+
+      <div class="filter-group add-bike-section">
+        <label>&nbsp;</label>
+        <button class="btn-add-bike" id="addYourBikeBtn">
+          <i class="fas fa-plus-circle"></i> Add Your Bike
+        </button>
+      </div>
     </div>
 
     <!-- MAIN CONTENT - NO MAP, FULL WIDTH SHOPS -->
@@ -100,12 +134,264 @@
         </div>
       </div>
     </div>
+    </div> <!-- End Shop Directory View -->
+
+    <!-- UNIFIED AUTH VIEW -->
+    <div id="loginView" class="view-container auth-view">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">
+              <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+            <button class="auth-tab" data-tab="signup">
+              <i class="fas fa-user-plus"></i> Sign Up
+            </button>
+          </div>
+
+          <!-- LOGIN TAB -->
+          <div id="loginTab" class="auth-tab-content active">
+            <h2><i class="fas fa-motorcycle"></i> Welcome Back, Biker!</h2>
+            <p class="auth-subtitle">Login to manage your motorcycles</p>
+
+            <form id="loginForm" class="auth-form">
+              <div class="form-group">
+                <label for="loginEmail">
+                  <i class="fas fa-envelope"></i> Email
+                </label>
+                <input type="email" id="loginEmail" name="email" required placeholder="your.email@example.com" />
+              </div>
+
+              <div class="form-group">
+                <label for="loginPassword">
+                  <i class="fas fa-lock"></i> Password
+                </label>
+                <input type="password" id="loginPassword" name="password" required placeholder="Enter your password" />
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-full">
+                  <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+              </div>
+            </form>
+
+            <div id="loginMessage" class="auth-message"></div>
+          </div>
+
+          <!-- SIGNUP TAB -->
+          <div id="signupTab" class="auth-tab-content">
+            <h2><i class="fas fa-user-plus"></i> Create Your Account</h2>
+            <p class="auth-subtitle">Join our community and manage your motorcycles</p>
+
+            <form id="registerForm" class="auth-form">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="registerFullName">
+                    <i class="fas fa-user"></i> Full Name *
+                  </label>
+                  <input type="text" id="registerFullName" name="fullName" required placeholder="John Doe" />
+                </div>
+
+                <div class="form-group">
+                  <label for="registerPhone">
+                    <i class="fas fa-phone"></i> Phone
+                  </label>
+                  <input type="tel" id="registerPhone" name="phone" placeholder="+1 234 567 8900" />
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="registerEmail">
+                    <i class="fas fa-envelope"></i> Email *
+                  </label>
+                  <input type="email" id="registerEmail" name="email" required placeholder="your.email@example.com" />
+                </div>
+
+                <div class="form-group">
+                  <label for="registerPassword">
+                    <i class="fas fa-lock"></i> Password *
+                  </label>
+                  <input type="password" id="registerPassword" name="password" required placeholder="Min. 6 characters" />
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-full btn-large">
+                  <i class="fas fa-user-plus"></i> Create Account
+                </button>
+              </div>
+            </form>
+
+            <div id="registerMessage" class="auth-message"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div id="profileView" class="view-container profile-view">
+      <div class="profile-container">
+        <header class="profile-header">
+          <h1><i class="fas fa-user-circle"></i> My Biker Profile</h1>
+          <p>Manage your personal information and motorcycles</p>
+        </header>
+
+        <!-- Personal Information Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2><i class="fas fa-id-card"></i> Personal Information</h2>
+            <button id="editProfileBtn" class="btn btn-secondary">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+          </div>
+
+          <div id="profileInfoDisplay" class="info-display">
+            <div class="info-item">
+              <span class="info-label">Name:</span>
+              <span id="displayFullName">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Email:</span>
+              <span id="displayEmail">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Phone:</span>
+              <span id="displayPhone">-</span>
+            </div>
+          </div>
+
+          <form id="profileEditForm" class="profile-form" style="display: none;">
+            <div class="form-group">
+              <label for="editFullName">Full Name</label>
+              <input type="text" id="editFullName" required />
+            </div>
+            <div class="form-group">
+              <label for="editPhone">Phone</label>
+              <input type="tel" id="editPhone" />
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Changes
+              </button>
+              <button type="button" id="cancelEditBtn" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Bikes Section -->
+        <section class="profile-section">
+          <div class="section-header">
+            <h2><i class="fas fa-motorcycle"></i> My Motorcycles</h2>
+            <button id="addBikeBtn" class="btn btn-primary">
+              <i class="fas fa-plus"></i> Add Motorcycle
+            </button>
+          </div>
+
+          <!-- Add/Edit Bike Form (Hidden by default) -->
+          <div id="bikeFormContainer" class="bike-form-container" style="display: none;">
+            <h3 id="bikeFormTitle"><i class="fas fa-motorcycle"></i> Add New Motorcycle</h3>
+            <form id="bikeForm" class="bike-form">
+              <input type="hidden" id="bikeId" />
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="bikeBrand">Brand *</label>
+                  <input type="text" id="bikeBrand" required placeholder="e.g., Harley-Davidson, BMW" />
+                </div>
+                <div class="form-group">
+                  <label for="bikeModel">Model *</label>
+                  <input type="text" id="bikeModel" required placeholder="e.g., Sportster, R1250GS" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="bikeYear">Year *</label>
+                  <input type="number" id="bikeYear" required min="1900" max="2100" placeholder="2020" />
+                </div>
+                <div class="form-group">
+                  <label for="bikeMileage">Mileage (km) *</label>
+                  <input type="number" id="bikeMileage" required min="0" placeholder="15000" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="bikeColor">Color</label>
+                  <input type="text" id="bikeColor" placeholder="e.g., Black, Red" />
+                </div>
+                <div class="form-group">
+                  <label for="bikeEngineSize">Engine Size</label>
+                  <input type="text" id="bikeEngineSize" placeholder="e.g., 1000cc" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="bikeVin">VIN</label>
+                  <input type="text" id="bikeVin" placeholder="Vehicle Identification Number" />
+                </div>
+                <div class="form-group">
+                  <label for="bikeLicensePlate">License Plate</label>
+                  <input type="text" id="bikeLicensePlate" placeholder="e.g., ABC-1234" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="bikeNotes">Notes</label>
+                <textarea id="bikeNotes" rows="3" placeholder="Any additional information about your motorcycle"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label><i class="fas fa-camera"></i> Upload Photos (Optional)</label>
+                <input type="file" id="bikePhotos" accept="image/*" multiple style="padding: 8px; border: 2px dashed #ccc; border-radius: 5px; width: 100%;">
+                <small style="color: #666; display: block; margin-top: 5px;">You can upload multiple photos. After saving, you can also add more photos from "View Details".</small>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save"></i> Save Motorcycle
+                </button>
+                <button type="button" id="cancelBikeBtn" class="btn btn-secondary">
+                  <i class="fas fa-times"></i> Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Bikes List -->
+          <div id="bikesList" class="bikes-list">
+            <div class="empty-state">
+              <i class="fas fa-motorcycle"></i>
+              <p>No motorcycles added yet</p>
+              <p class="empty-subtitle">Click "Add Motorcycle" to get started</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Bike Detail Modal -->
+    <div id="bikeDetailModal" class="modal">
+      <div class="modal-content bike-detail-modal">
+        <span class="modal-close">&times;</span>
+        <div id="bikeDetailContent"></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Supabase + App scripts -->
-  <script type="module" src="js/app.js"></script>
+  <!-- Supabase + App scripts (with cache busting) -->
+  <script type="module" src="js/app.js?v=20241121008"></script>
+  <script type="module" src="js/auth.js?v=20241121008"></script>
+  <script type="module" src="js/profile.js?v=20241121008"></script>
+  <script type="module" src="js/bikes.js?v=20241121008"></script>
 </body>
 </html>

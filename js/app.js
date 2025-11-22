@@ -1,13 +1,19 @@
 // js/app.js
-// 🔴 FIXED: Better filtering logic with case-insensitive matching
+// Main application file
 
-import { 
-    fetchAllShops, 
+import {
+    fetchAllShops,
     getStats,
     getUniqueCountries,
     getCitiesByCountry,
-    getBusinessTypes
+    getBusinessTypes,
+    supabase
 } from './supabase.js';
+
+// Import authentication and profile modules
+import { initAuth, getBikerProfile } from './auth.js';
+import { initProfile } from './profile.js';
+import { initBikes } from './bikes.js';
 
 // ============================================
 // STATE
@@ -21,6 +27,10 @@ let selectedBusinessType = '';
 
 let allCountries = [];
 let allBusinessTypes = [];
+
+// User bike data for personalized filtering
+let userBikes = [];
+let userBikeBrands = [];
 
 // ============================================
 // DOM ELEMENTS
@@ -37,12 +47,96 @@ const searchFilter = document.getElementById('searchFilter');
 window.addEventListener('DOMContentLoaded', async function() {
     console.log('🟡 [INIT] App initializing...');
     try {
+        // Initialize authentication module
+        initAuth();
+
+        // Initialize profile module
+        initProfile();
+
+        // Initialize bikes module
+        initBikes();
+
+        // Setup navigation
+        setupNavigation();
+
+        // Initialize shop directory
         await initializeApp();
     } catch (error) {
         console.error('❌ [INIT] Fatal error:', error);
         showStatus('❌ FATAL ERROR: ' + error.message, 'error');
     }
 });
+
+// ============================================
+// CHECK USER BIKES FOR PERSONALIZED FILTERING
+// ============================================
+async function checkUserBikesForFiltering() {
+    try {
+        const profile = await getBikerProfile();
+
+        if (!profile) {
+            console.log('ℹ️ [Filter] No user logged in - showing all shops');
+            userBikes = [];
+            userBikeBrands = [];
+            return;
+        }
+
+        // Fetch user's bikes
+        const { data: bikes, error } = await supabase
+            .from('bikes')
+            .select('brand, model')
+            .eq('biker_id', profile.id);
+
+        if (error) {
+            console.error('❌ [Filter] Error loading user bikes:', error);
+            userBikes = [];
+            userBikeBrands = [];
+            return;
+        }
+
+        userBikes = bikes || [];
+        userBikeBrands = [...new Set(bikes.map(b => b.brand.toLowerCase()))];
+
+        if (userBikes.length > 0) {
+            console.log(`✅ [Filter] User has ${userBikes.length} bike(s):`, userBikes.map(b => `${b.brand} ${b.model}`));
+            console.log(`🔍 [Filter] Will prioritize shops for brands: ${userBikeBrands.join(', ')}`);
+
+            // Show personalized message
+            showPersonalizedMessage();
+        } else {
+            console.log('ℹ️ [Filter] User logged in but no bikes added yet');
+        }
+
+    } catch (error) {
+        console.error('❌ [Filter] Error checking user bikes:', error);
+        userBikes = [];
+        userBikeBrands = [];
+    }
+}
+
+// Show personalized filtering message
+function showPersonalizedMessage() {
+    const statusMessage = document.getElementById('statusMessage');
+    if (statusMessage && userBikes.length > 0) {
+        const bikeList = userBikes.map(b => `${b.brand} ${b.model}`).join(', ');
+        statusMessage.innerHTML = `
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin: 15px 0;">
+                <strong>🏍️ Personalized for your bikes:</strong> ${bikeList}
+                <br><small>Showing shops that can service your motorcycles. <a href="#" onclick="window.showAllShops(); return false;" style="color: #2196f3;">Show all shops</a></small>
+            </div>
+        `;
+    }
+}
+
+// Function to show all shops (remove personalization)
+window.showAllShops = function() {
+    userBikeBrands = [];
+    applyAllFilters();
+    const statusMessage = document.getElementById('statusMessage');
+    if (statusMessage) {
+        statusMessage.innerHTML = '';
+    }
+};
 
 async function initializeApp() {
     try {
@@ -52,6 +146,9 @@ async function initializeApp() {
         console.log('📥 STEP 1: Fetching shops from Supabase...');
         allShops = await fetchAllShops();
         console.log(`✅ STEP 1 COMPLETE: Loaded ${allShops.length} shops`);
+
+        // STEP 1.5: Check if user is logged in and has bikes - for personalized filtering
+        await checkUserBikesForFiltering();
 
         if (allShops.length === 0) {
             showStatus('❌ NO DATA: No shops in database!', 'error');
@@ -242,6 +339,7 @@ function displayShopsByFilters() {
         console.log(`  City: "${selectedCity}"`);
         console.log(`  Business Type: "${selectedBusinessType}"`);
         console.log(`  Search: "${currentSearch}"`);
+        console.log(`  User Bike Brands: ${userBikeBrands.length > 0 ? userBikeBrands.join(', ') : 'None'}`);
 
         // 🔴 FIXED: Better filtering with proper conditions
         filteredShops = allShops.filter(shop => {
@@ -266,25 +364,29 @@ function displayShopsByFilters() {
                 shop.business_type.toLowerCase().trim() === selectedBusinessType.toLowerCase().trim()
             );
             
-            // 🔴 NEW: Detailed logging for debugging
-            if (selectedBusinessType && shop.business_type !== selectedBusinessType) {
-                // This logs once per unique business type combo
-                if (selectedCountry && shop.country === selectedCountry) {
-                    if (selectedCity && shop.city === selectedCity) {
-                        if (matchesSearch) {
-                            // Only log mismatches for current filters
-                            const match = shop.business_type && 
-                                         shop.business_type.toLowerCase().trim() === selectedBusinessType.toLowerCase().trim();
-                            if (!match) {
-                                // Silently fail this shop
-                            }
-                        }
-                    }
-                }
+            // 🏍️ NEW: Personalized filter - match shops that service user's bike brands
+            let matchesBikeBrand = true;
+            if (userBikeBrands.length > 0) {
+                // Check if shop name, services, or description mentions the user's bike brands
+                const shopText = `${shop.name || ''} ${shop.services || ''} ${shop.description || ''} ${shop.specialties || ''}`.toLowerCase();
+                matchesBikeBrand = userBikeBrands.some(brand => shopText.includes(brand));
             }
-            
-            return matchesSearch && matchesCountry && matchesCity && matchesType;
+
+            return matchesSearch && matchesCountry && matchesCity && matchesType && matchesBikeBrand;
         });
+
+        // Sort: prioritize shops that match user's bike brands
+        if (userBikeBrands.length > 0) {
+            filteredShops.sort((a, b) => {
+                const aText = `${a.name || ''} ${a.services || ''} ${a.description || ''}`.toLowerCase();
+                const bText = `${b.name || ''} ${b.services || ''} ${b.description || ''}`.toLowerCase();
+
+                const aMatches = userBikeBrands.filter(brand => aText.includes(brand)).length;
+                const bMatches = userBikeBrands.filter(brand => bText.includes(brand)).length;
+
+                return bMatches - aMatches; // Higher matches first
+            });
+        }
 
         console.log(`✅ [displayShopsByFilters] Filtered to ${filteredShops.length} shops`);
         
@@ -481,6 +583,82 @@ function showStatus(message, type = 'info') {
 }
 
 // ============================================
+// NAVIGATION
+// ============================================
+
+function setupNavigation() {
+    console.log('🔀 [setupNavigation] Setting up navigation...');
+
+    // Get all navigation links
+    const navLinks = document.querySelectorAll('.nav-link[data-view]');
+
+    // Add click listeners
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const viewName = link.getAttribute('data-view');
+            navigateToView(viewName);
+        });
+    });
+
+    console.log('✅ [setupNavigation] Navigation ready');
+}
+
+// Navigate to a specific view (make it global so auth.js can use it)
+window.navigateToView = function(viewName) {
+    console.log(`🔀 [navigateToView] Navigating to: ${viewName}`);
+
+    // Forcefully hide ALL views first
+    document.querySelectorAll('.view-container').forEach(view => {
+        view.classList.remove('active');
+        view.style.display = 'none';
+    });
+
+    // Remove active class from all nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    // Show the selected view
+    let viewId;
+    switch (viewName) {
+        case 'shop-directory':
+            viewId = 'shopDirectoryView';
+            break;
+        case 'login':
+            viewId = 'loginView';
+            break;
+        case 'register':
+            viewId = 'registerView';
+            break;
+        case 'profile':
+            viewId = 'profileView';
+            break;
+        default:
+            viewId = 'shopDirectoryView';
+    }
+
+    const view = document.getElementById(viewId);
+    if (view) {
+        view.classList.add('active');
+        // Force display based on view type
+        if (view.classList.contains('auth-view')) {
+            view.style.display = 'flex';
+        } else {
+            view.style.display = 'block';
+        }
+    }
+
+    // Update active nav link
+    const activeNavLink = document.querySelector(`.nav-link[data-view="${viewName}"]`);
+    if (activeNavLink) {
+        activeNavLink.classList.add('active');
+    }
+
+    console.log(`✅ [navigateToView] Now showing: ${viewId}`);
+}
+
+// ============================================
 // EVENT LISTENERS
 // ============================================
 
@@ -501,7 +679,7 @@ function setupEventListeners() {
                 selectedCountry = e.target.value;
                 selectedCity = '';
                 console.log(`🌍 Country selected: "${selectedCountry}"`);
-                
+
                 populateCityDropdown(selectedCountry);
                 businessTypeSelect.value = '';
                 selectedBusinessType = '';
@@ -513,7 +691,7 @@ function setupEventListeners() {
             citySelect.addEventListener('change', (e) => {
                 selectedCity = e.target.value;
                 console.log(`🏙️  City selected: "${selectedCity}"`);
-                
+
                 businessTypeSelect.value = '';
                 selectedBusinessType = '';
                 displayShopsByFilters();
