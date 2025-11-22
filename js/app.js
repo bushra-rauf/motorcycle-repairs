@@ -8,7 +8,7 @@ import {
     getCitiesByCountry,
     getBusinessTypes,
     supabase
-} from './supabase.js';
+} from './supabase-clean.js';
 
 // Import authentication and profile modules
 import { initAuth, getBikerProfile } from './auth.js';
